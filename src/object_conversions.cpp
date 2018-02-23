@@ -10,7 +10,6 @@ class tf_publisher{
         void init(){
                 _nh.getParam("/", _parameters);
                 _camera_type = static_cast<std::string>(_parameters["camera_type"]);
-                _stamped_transform_publisher = _nh.advertise<geometry_msgs::TransformStamped>("/visual/object_position_base_frame", 1000);
                 _object_update_sub = _nh.subscribe<static_object_position_tracking::ObjectPosition>("/visual/cam_frame_obj_pos_vector", 50, &tf_publisher::object_callback, this);
                 _object_size = 0;
 
@@ -48,7 +47,7 @@ class tf_publisher{
                 if(_camera_type == "kinect_2")
                     tf_pub.sendTransform(tf::StampedTransform(transform, timestamp, "kinect2_link", child_frame_id));
                 else
-                    tf_pub.sendTransform(tf::StampedTransform(transform, timestamp, "camera_link", child_frame_id));
+                    tf_pub.sendTransform(tf::StampedTransform(transform, timestamp, "camera_depth_optical_frame", child_frame_id));
             }
 
         int get_object_size(){
@@ -58,7 +57,6 @@ class tf_publisher{
     private:
         ros::NodeHandle _nh;
         XmlRpc::XmlRpcValue _parameters;
-        ros::Publisher _stamped_transform_publisher;
         ros::Subscriber _object_update_sub;
         tf::TransformBroadcaster tf_pub;
         tf::StampedTransform stamped_transform;

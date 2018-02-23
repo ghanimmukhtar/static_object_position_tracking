@@ -1,5 +1,5 @@
 <launch> 
-  <arg name="real_camera" default="true"/>
+  <arg name="real_camera" default="false"/>
   <group if="$(arg real_camera)">
 
     <!--For kinect 2 on head of baxter-->

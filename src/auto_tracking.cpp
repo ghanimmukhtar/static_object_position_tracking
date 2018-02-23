@@ -255,11 +255,6 @@ class OpenNISegmentTracking
                         color_coherence->setWeight (0.1);
                         coherence->addPointCoherence (color_coherence);
 
-                        //                        boost::shared_ptr<NormalCoherence<RefPointType> > normal_coherence
-                        //                                = boost::shared_ptr<NormalCoherence<RefPointType> > (new NormalCoherence<RefPointType> ());
-                        //                        normal_coherence->setWeight(0.1);
-                        //                        coherence->addPointCoherence(normal_coherence);
-
                         //boost::shared_ptr<pcl::search::KdTree<RefPointType> > search (new pcl::search::KdTree<RefPointType> (false));
                         boost::shared_ptr<pcl::search::Octree<RefPointType> > search (new pcl::search::Octree<RefPointType> (0.01));
                         //boost::shared_ptr<pcl::search::OrganizedNeighbor<RefPointType> > search (new pcl::search::OrganizedNeighbor<RefPointType>);
@@ -502,7 +497,7 @@ class OpenNISegmentTracking
                                         if(strcmp(_camera_type.c_str(), "kinect_2") == 0)
                                             point.header.frame_id = "kinect2_link";
                                         if(strcmp(_camera_type.c_str(), "kinect_1") == 0)
-                                            point.header.frame_id = "camera_link";
+                                            point.header.frame_id = "camera_depth_optical_frame";
                                         int tmp_id = obj_pos_vector[i].first;
                                         std::vector<double> tmp_pos = obj_pos_vector[i].second;
                                         point.point.x = tmp_pos[0];
@@ -639,10 +634,6 @@ class OpenNISegmentTracking
                 pcl::PointCloud<RefPointType>::Ptr cloud_tf_pcl(new pcl::PointCloud<RefPointType>);
                 pcl::fromPCLPointCloud2(pcl_pc2, *cloud_tf_pcl);
 
-                //ne_.setInputCloud(cloud_tf_pcl);
-                //ne_.compute(*cloud_tf_pcl);
-                //std::cerr << "cloud_tf_pcl : " << cloud_tf_pcl->width * cloud_tf_pcl->height << " data points." << std::endl;
-
                 if (print_time_){
                         end = pcl::getTime ();
                         double toPCL_time = end - start;
@@ -756,15 +747,6 @@ class OpenNISegmentTracking
                 // Initialize ROS
                 ros::init (argc, argv, "create_model");
 
-
-                // // Load object to track (in the camera frame)
-                // ref_cloud.reset(new Cloud());
-                // if(pcl::io::loadPCDFile (argv[1], *ref_cloud) == -1){
-                //   std::cout << "pcd file not found" << std::endl;
-                //   exit(-1);
-                // }
-
-                //        _objects_positions_pub = nh.advertise<static_object_position_tracking::ObjectPosition>("/visual/obj_pos_vector", 1);
                 _objects_positions_pub = nh.advertise<static_object_position_tracking::ObjectPosition>("/visual/cam_frame_obj_pos_vector", 1);
                 std::vector< sensor_msgs::PointCloud2 > obj_cloud_vector;
                 ros::ServiceClient client = nh.serviceClient <static_object_position_tracking::ObjectCloud> ("/visual/get_object_model_vector");
@@ -802,7 +784,6 @@ class OpenNISegmentTracking
                     sub = nh.subscribe ("/kinect2/hd/points", 1, &OpenNISegmentTracking::cloud_cb, this);
                 if(strcmp(_camera_type.c_str(), "kinect_1") == 0)
                     sub = nh.subscribe ("/camera/depth_registered/sw_registered/points", 1, &OpenNISegmentTracking::cloud_cb, this);
-                //        ros::Subscriber sub = nh.subscribe ("/kinect2/sd/points", 1, &OpenNISegmentTracking::cloud_cb, this);
                 ros::spin ();
 
                 while (ros::ok())
@@ -817,7 +798,6 @@ class OpenNISegmentTracking
         pcl::visualization::PCLVisualizer viewer_ ;
         CloudPtr cloud_pass_;
         CloudPtr cloud_pass_downsampled_;
-        // std::vector<CloudPtr> ref_cloud_vector; // object clouds to track
         std::map<int, CloudPtr> ref_cloud_dict; // object clouds to track
         std::map<int, CloudPtr> reference_dict;
         std::map<int, RefCloudPtr> tracked_cloud_dict;
@@ -858,18 +838,6 @@ main (int argc, char** argv)
         // Initialize ROS
         ros::init (argc, argv, "create_model");
         ros::NodeHandle n;
-
-        // Restart robot position
-        //        ros::ServiceClient client = n.serviceClient<baxter_kinematics::RestartRobot>("/baxter_kinematics/restart_robot");
-        //        baxter_kinematics::RestartRobot srv;
-        //        if (client.call(srv))
-        //        {
-        //            ROS_INFO("Restarting robot position");
-        //        }
-        //        else
-        //        {
-        //            ROS_ERROR("Restarting robot position failed");
-        //        }
 
         // open kinect
         //OpenNISegmentTracking<pcl::PointNormal> v (device_id, 8, downsampling_grid_size,
