@@ -1,5 +1,5 @@
 <launch> 
-  <arg name="real_camera" default="false"/>
+  <arg name="real_camera" default="true"/>
   <group if="$(arg real_camera)">
 
     <!--For kinect 2 on head of baxter-->
@@ -11,8 +11,8 @@
     <node name="statict_transform" pkg="tf" type="static_transform_publisher" args=" $(arg camera_link_pose) /base /kinect2_link 100"/> 
   </group>
 
-  <rosparam command="load" file="$(find static_object_position_tracking)/src/params.yaml"/>
-   <rosparam command="load" file="$(find static_object_position_tracking)/launch/params/parameters.yaml"/>
+  <!-- <rosparam command="load" file="$(find static_object_position_tracking)/src/params.yaml"/> -->
+  <rosparam command="load" file="$(find static_object_position_tracking)/launch/params/parameters.yaml"/>
 
   <node name="create_model_node" pkg="static_object_position_tracking" type="create_model"  output="screen"/> 
 </launch>

@@ -494,9 +494,9 @@ class OpenNISegmentTracking
                                 for(size_t i = 0; i < obj_pos_vector.size(); i++){
                                         geometry_msgs::PointStamped point;
                                         point.header.stamp = ros::Time::now();
-                                        if(strcmp(_camera_type.c_str(), "kinect_2") == 0)
+                                        if(_camera_type == "kinect_2")
                                             point.header.frame_id = "kinect2_link";
-                                        if(strcmp(_camera_type.c_str(), "kinect_1") == 0)
+                                        else if(_camera_type == "kinect_1")
                                             point.header.frame_id = "camera_depth_optical_frame";
                                         int tmp_id = obj_pos_vector[i].first;
                                         std::vector<double> tmp_pos = obj_pos_vector[i].second;
@@ -780,9 +780,9 @@ class OpenNISegmentTracking
 
                 // Create a ROS subscriber for the input point cloud
                 ros::Subscriber sub;
-                if(strcmp(_camera_type.c_str(), "kinect_2") == 0)
+                if(_camera_type == "kinect_2")
                     sub = nh.subscribe ("/kinect2/hd/points", 1, &OpenNISegmentTracking::cloud_cb, this);
-                if(strcmp(_camera_type.c_str(), "kinect_1") == 0)
+                else if(_camera_type == "kinect_1")
                     sub = nh.subscribe ("/camera/depth_registered/sw_registered/points", 1, &OpenNISegmentTracking::cloud_cb, this);
                 ros::spin ();
 

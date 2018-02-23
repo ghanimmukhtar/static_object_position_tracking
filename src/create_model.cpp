@@ -48,10 +48,11 @@ class object_model_creater {
                 try {
                     _nh.getParam("/", _parameters);
                     _camera_type = static_cast<string>(_parameters["camera_type"]);
+                    ROS_WARN_STREAM("CREATE MODEL : Camera type is : " << _camera_type);
                     std::string cloud_topic_name;
-                    if(strcmp(_camera_type.c_str(), "kinect_2") == 0)
+                    if(_camera_type == "kinect_2")
                         cloud_topic_name = "/kinect2/qhd/points";
-                    if(strcmp(_camera_type.c_str(), "kinect_1") == 0)
+                    else if(_camera_type == "kinect_1")
                         cloud_topic_name = "/camera/depth_registered/sw_registered/points";
                     else{
                             ROS_ERROR("Please enter camera type, either 'kinect_1' or 'kinect_2'");
@@ -108,9 +109,9 @@ class object_model_creater {
                 sensor_msgs::PointCloud2 input_tf;
                 std::string in_frame = "base";
                 std::string out_frame;
-                if(strcmp(_camera_type.c_str(), "kinect_2") == 0)
+                if(_camera_type == "kinect_2")
                     out_frame = "kinect2_link";
-                if(strcmp(_camera_type.c_str(), "kinect_1") == 0)
+                else if(_camera_type == "kinect_1")
                     out_frame = "camera_depth_optical_frame";
 
 
