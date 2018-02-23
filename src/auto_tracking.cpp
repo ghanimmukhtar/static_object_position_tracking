@@ -39,15 +39,10 @@
 #include <iostream>
 #include <string>
 #include <sensor_msgs/PointCloud2.h>
-#include <pcl_tracking/ObjectCloud.h>
-#include <pcl_tracking/ObjectPosition.h>
+#include <static_object_position_tracking/ObjectCloud.h>
+#include <static_object_position_tracking/ObjectPosition.h>
 #include <chrono>
 #include <ctime>
-
-
-
-
-#include <baxter_kinematics/RestartRobot.h>
 
 #include <tf2_ros/transform_listener.h>
 #include <tf2_ros/buffer.h>
@@ -61,10 +56,8 @@
 #include <pcl/point_cloud.h>
 #include <pcl/PCLPointCloud2.h>
 #include <pcl/conversions.h>
-#include <pcl_ros/transforms.h> 
+#include <pcl_ros/transforms.h>
 
-#define PCL_NO_PRECOMPILE
-#define PCL_TRACKING_NORMAL_SUPPORTED
 #include <pcl/tracking/tracking.h>
 #include <pcl/tracking/particle_filter.h>
 #include <pcl/tracking/kld_adaptive_particle_filter_omp.h>
@@ -144,8 +137,8 @@ class OpenNISegmentTracking
     {
     public:
         //typedef pcl::PointXYZRGBNormal RefPointType;
-        typedef pcl::PointNormal RefPointType;
-        //typedef pcl::PointXYZRGBA RefPointType;
+        //typedef pcl::PointNormal RefPointType;
+        typedef pcl::PointXYZRGBA RefPointType;
         //typedef pcl::PointXYZ RefPointType;
         typedef ParticleXYZRPY ParticleT;
         //typedef ParticleFilterOMPTracker qdf;
@@ -223,7 +216,7 @@ class OpenNISegmentTracking
                                 ROS_WARN("USING ADAPTABLE PARTICLES");
                                 boost::shared_ptr<KLDAdaptiveParticleFilterOMPTracker<RefPointType, ParticleT> > tracker
                                         (new KLDAdaptiveParticleFilterOMPTracker<RefPointType, ParticleT> (thread_nr_));
-                                tracker->setMaximumParticleNum (50000);
+                                tracker->setMaximumParticleNum (500);
                                 tracker->setDelta (0.99);
                                 tracker->setEpsilon (0.2);
                                 ParticleT bin_size;
@@ -246,7 +239,7 @@ class OpenNISegmentTracking
 
                         tracker_->setParticleNum (400);
                         tracker_->setResampleLikelihoodThr(0.00);
-                        tracker_->setUseNormal (true);
+                        tracker_->setUseNormal (false);
                         // setup coherences
                         ApproxNearestPairPointCloudCoherence<RefPointType>::Ptr coherence = ApproxNearestPairPointCloudCoherence<RefPointType>::Ptr
                                 (new ApproxNearestPairPointCloudCoherence<RefPointType> ());
@@ -257,15 +250,15 @@ class OpenNISegmentTracking
                                 = boost::shared_ptr<DistanceCoherence<RefPointType> > (new DistanceCoherence<RefPointType> ());
                         coherence->addPointCoherence (distance_coherence);
 
-                        //                        boost::shared_ptr<HSVColorCoherence<RefPointType> > color_coherence
-                        //                                = boost::shared_ptr<HSVColorCoherence<RefPointType> > (new HSVColorCoherence<RefPointType> ());
-                        //                        color_coherence->setWeight (0.1);
-                        //                        coherence->addPointCoherence (color_coherence);
+                        boost::shared_ptr<HSVColorCoherence<RefPointType> > color_coherence
+                                = boost::shared_ptr<HSVColorCoherence<RefPointType> > (new HSVColorCoherence<RefPointType> ());
+                        color_coherence->setWeight (0.1);
+                        coherence->addPointCoherence (color_coherence);
 
-                        boost::shared_ptr<NormalCoherence<RefPointType> > normal_coherence
-                                = boost::shared_ptr<NormalCoherence<RefPointType> > (new NormalCoherence<RefPointType> ());
-                        normal_coherence->setWeight(0.1);
-                        coherence->addPointCoherence(normal_coherence);
+                        //                        boost::shared_ptr<NormalCoherence<RefPointType> > normal_coherence
+                        //                                = boost::shared_ptr<NormalCoherence<RefPointType> > (new NormalCoherence<RefPointType> ());
+                        //                        normal_coherence->setWeight(0.1);
+                        //                        coherence->addPointCoherence(normal_coherence);
 
                         //boost::shared_ptr<pcl::search::KdTree<RefPointType> > search (new pcl::search::KdTree<RefPointType> (false));
                         boost::shared_ptr<pcl::search::Octree<RefPointType> > search (new pcl::search::Octree<RefPointType> (0.01));
@@ -309,11 +302,11 @@ class OpenNISegmentTracking
                                     }
                                 // return true;
                             }
-                        //                        else
-                        //                            {
-                        //                                PCL_WARN ("no particles for cloud %i \n", obj_id);
-                        //                                // return false;
-                        //                            }
+                        else
+                            {
+                                PCL_WARN ("no particles for cloud %i \n", obj_id);
+                                // return false;
+                            }
                     }
                 return true;
             }
@@ -377,17 +370,17 @@ class OpenNISegmentTracking
                         CloudPtr cloud_pass;
                         cloud_pass = cloud_pass_;
 
-                        //if (!viz.updatePointCloud (cloud_pass, "cloudpass"))
-                        //  {
-                        //viz.addPointCloud (cloud_pass, ColorHandlerT (cloud_pass, 0.0, 255.0, 0.0), "cloudpass");
-                        //viz.resetCameraViewpoint ("cloudpass");
-                        //}
+                        if (!viz.updatePointCloud (cloud_pass, "cloudpass"))
+                            {
+                                viz.addPointCloud (cloud_pass, "cloudpass");
+                                viz.resetCameraViewpoint ("cloudpass");
+                            }
                     }
 
                 if (print_time_){
                         auto viz_setup_end = std::chrono::high_resolution_clock::now();
                         std::chrono::duration<double> viz_setup_time = viz_setup_end - viz_setup;
-                        //ROS_WARN_STREAM("viz_setup time: " << viz_setup_time.count() << " seconds");
+                        ROS_WARN_STREAM("viz_setup time: " << viz_setup_time.count() << " seconds");
                     }
 
                 if (new_cloud_ && (reference_dict.size() > 0) )
@@ -420,7 +413,7 @@ class OpenNISegmentTracking
                                 if (print_time_){
                                         auto viz_draw_end = std::chrono::high_resolution_clock::now();
                                         std::chrono::duration<double> viz_draw_time = viz_draw_end - viz_draw;
-                                        //ROS_WARN_STREAM("Total viz_draw time: " << viz_draw_time.count() << " seconds");
+                                        ROS_WARN_STREAM("Total viz_draw time: " << viz_draw_time.count() << " seconds");
                                     }
 
                                 ///// Bounding box
@@ -684,7 +677,7 @@ class OpenNISegmentTracking
                                 removeZeroPoints (ref_cloud, *nonzero_ref); // OBJECT TO TRACK !!!!
                                 //std::cerr << "nonzero_ref: " << nonzero_ref->width * nonzero_ref->height << " data points." << std::endl;
 
-                                //PCL_INFO ("calculating cog\n"); // center of gravity
+                                PCL_INFO ("calculating cog\n"); // center of gravity
 
                                 Eigen::Vector4f c;
                                 RefCloudPtr transed_ref (new RefCloud);
@@ -771,11 +764,11 @@ class OpenNISegmentTracking
                 //   exit(-1);
                 // }
 
-                //        _objects_positions_pub = nh.advertise<pcl_tracking::ObjectPosition>("/visual/obj_pos_vector", 1);
-                _objects_positions_pub = nh.advertise<pcl_tracking::ObjectPosition>("/visual/cam_frame_obj_pos_vector", 1);
+                //        _objects_positions_pub = nh.advertise<static_object_position_tracking::ObjectPosition>("/visual/obj_pos_vector", 1);
+                _objects_positions_pub = nh.advertise<static_object_position_tracking::ObjectPosition>("/visual/cam_frame_obj_pos_vector", 1);
                 std::vector< sensor_msgs::PointCloud2 > obj_cloud_vector;
-                ros::ServiceClient client = nh.serviceClient <pcl_tracking::ObjectCloud> ("/visual/get_object_model_vector");
-                pcl_tracking::ObjectCloud srv;
+                ros::ServiceClient client = nh.serviceClient <static_object_position_tracking::ObjectCloud> ("/visual/get_object_model_vector");
+                static_object_position_tracking::ObjectCloud srv;
                 if (client.call(srv))
                     {
                         obj_cloud_vector = srv.response.cloud_vector;
@@ -820,7 +813,7 @@ class OpenNISegmentTracking
         int nb_objects;
 
         ros::Publisher _objects_positions_pub;
-        pcl_tracking::ObjectPosition obj_pos_msg_;
+        static_object_position_tracking::ObjectPosition obj_pos_msg_;
         pcl::visualization::PCLVisualizer viewer_ ;
         CloudPtr cloud_pass_;
         CloudPtr cloud_pass_downsampled_;
@@ -879,10 +872,14 @@ main (int argc, char** argv)
         //        }
 
         // open kinect
-        OpenNISegmentTracking<pcl::PointNormal> v (device_id, 8, downsampling_grid_size,
-                                                   use_convex_hull,
-                                                   visualize_non_downsample, visualize_particles,
-                                                   use_fixed, print_time, n);
+        //OpenNISegmentTracking<pcl::PointNormal> v (device_id, 8, downsampling_grid_size,
+        //                                           use_convex_hull,
+        //                                           visualize_non_downsample, visualize_particles,
+        //                                           use_fixed, print_time, n);
+        OpenNISegmentTracking<pcl::PointXYZRGBA> v (device_id, 8, downsampling_grid_size,
+                                                    use_convex_hull,
+                                                    visualize_non_downsample, visualize_particles,
+                                                    use_fixed, print_time, n);
         v.run (argc, argv);
 
     }

@@ -31,11 +31,11 @@
 #include <tf2_ros/buffer.h>
 #include <tf2/transform_datatypes.h>
 #include <tf2_sensor_msgs/tf2_sensor_msgs.h>
-#include <pcl_tracking/ObjectCloud.h>
+#include <static_object_position_tracking/ObjectCloud.h>
 
 using namespace std;
-//typedef pcl::PointXYZRGBA PointType;
-typedef pcl::PointNormal PointType;
+typedef pcl::PointXYZRGBA PointType;
+//typedef pcl::PointNormal PointType;
 string output_filename;
 
 class object_model_creater {
@@ -247,8 +247,8 @@ class object_model_creater {
             }
 
 
-        bool get_object_model(pcl_tracking::ObjectCloud::Request& req,
-                              pcl_tracking::ObjectCloud::Response& res){
+        bool get_object_model(static_object_position_tracking::ObjectCloud::Request& req,
+                              static_object_position_tracking::ObjectCloud::Response& res){
                 process_cloud();
                 if(_service_response.empty()){
                         ROS_WARN("Objects clouds vector is EMPTY, wait or put object in camera FOV");
