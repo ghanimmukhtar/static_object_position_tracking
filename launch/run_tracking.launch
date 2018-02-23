@@ -1,0 +1,7 @@
+<launch> 
+
+  <node name="auto_tracking" pkg="pcl_tracking" type="auto_tracking" output="screen"/> 
+
+  <node name="object_conversions" pkg="pcl_tracking" type="object_conversions" output="screen"/> 
+
+</launch>
