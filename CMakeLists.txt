@@ -24,6 +24,8 @@ find_package(catkin REQUIRED COMPONENTS
 add_message_files(
   FILES
   ObjectPosition.msg  
+  ObjectPositionID.msg
+  ObjectsPositionsMap.msg
 )
 
 add_service_files(

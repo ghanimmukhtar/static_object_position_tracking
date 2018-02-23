@@ -40,7 +40,8 @@
 #include <string>
 #include <sensor_msgs/PointCloud2.h>
 #include <static_object_position_tracking/ObjectCloud.h>
-#include <static_object_position_tracking/ObjectPosition.h>
+#include <static_object_position_tracking/ObjectsPositionsMap.h>
+#include <static_object_position_tracking/ObjectPositionID.h>
 #include <chrono>
 #include <ctime>
 
@@ -490,8 +491,10 @@ class OpenNISegmentTracking
                                     }
 
                                 std::string parent_frame = "/base";
-                                obj_pos_msg_.object_position.clear();
+                                obj_pos_msg_.objects_positions_id.clear();
                                 for(size_t i = 0; i < obj_pos_vector.size(); i++){
+                                        static_object_position_tracking::ObjectPositionID current_object;
+                                        current_object.object_id = i;
                                         geometry_msgs::PointStamped point;
                                         point.header.stamp = ros::Time::now();
                                         if(_camera_type == "kinect_2")
@@ -504,7 +507,8 @@ class OpenNISegmentTracking
                                         point.point.y = tmp_pos[1];
                                         point.point.z = tmp_pos[2];
                                         point.header.seq = tmp_id;
-                                        obj_pos_msg_.object_position.push_back(point);
+                                        current_object.object_position = point;
+                                        obj_pos_msg_.objects_positions_id.push_back(current_object);
                                         //                    ROS_ERROR_STREAM("Base frame object " <<
                                         //                                                    tmp_id << " : " <<
                                         //                                                    tmp_pos[0] << " " <<
@@ -747,7 +751,7 @@ class OpenNISegmentTracking
                 // Initialize ROS
                 ros::init (argc, argv, "create_model");
 
-                _objects_positions_pub = nh.advertise<static_object_position_tracking::ObjectPosition>("/visual/cam_frame_obj_pos_vector", 1);
+                _objects_positions_pub = nh.advertise<static_object_position_tracking::ObjectsPositionsMap>("/visual/cam_frame_obj_pos_vector", 1);
                 std::vector< sensor_msgs::PointCloud2 > obj_cloud_vector;
                 ros::ServiceClient client = nh.serviceClient <static_object_position_tracking::ObjectCloud> ("/visual/get_object_model_vector");
                 static_object_position_tracking::ObjectCloud srv;
@@ -794,7 +798,7 @@ class OpenNISegmentTracking
         int nb_objects;
 
         ros::Publisher _objects_positions_pub;
-        static_object_position_tracking::ObjectPosition obj_pos_msg_;
+        static_object_position_tracking::ObjectsPositionsMap obj_pos_msg_;
         pcl::visualization::PCLVisualizer viewer_ ;
         CloudPtr cloud_pass_;
         CloudPtr cloud_pass_downsampled_;

@@ -3,29 +3,29 @@
 #include <tf/transform_broadcaster.h>
 #include <tf/transform_listener.h>
 #include <tf2_msgs/TFMessage.h>
-#include <static_object_position_tracking/ObjectPosition.h>
+#include <static_object_position_tracking/ObjectsPositionsMap.h>
+#include <static_object_position_tracking/ObjectPositionID.h>
 
 class tf_publisher{
     public:
         void init(){
                 _nh.getParam("/", _parameters);
                 _camera_type = static_cast<std::string>(_parameters["camera_type"]);
-                _object_update_sub = _nh.subscribe<static_object_position_tracking::ObjectPosition>("/visual/cam_frame_obj_pos_vector", 50, &tf_publisher::object_callback, this);
-                _object_size = 0;
+                _object_update_sub = _nh.subscribe<static_object_position_tracking::ObjectsPositionsMap>("/visual/cam_frame_obj_pos_vector", 50, &tf_publisher::object_callback, this);
+                _number_of_objects = 0;
 
                 ros::AsyncSpinner my_spinner(4);
                 my_spinner.start();
             }
 
-        void object_callback(const static_object_position_tracking::ObjectPositionConstPtr& object_msgs){
-                _object_size = object_msgs->object_position.size();
-                for(size_t i = 0; i < _object_size; i++){
-
+        void object_callback(const static_object_position_tracking::ObjectsPositionsMapConstPtr& object_msgs){
+                _number_of_objects = object_msgs->objects_positions_id.size();
+                for(size_t i = 0; i < _number_of_objects; i++){
 
                         //ROS_WARN_STREAM("The choosen point in camera frame is: X = " << point.point.x << ", Y = " << point.point.y << ", and Z = " << point.point.z);
 
-
-                        publish_point_frame(object_msgs->object_position[i], "/visual/object_base_frame_" + std::to_string(i));
+                        publish_point_frame(object_msgs->objects_positions_id[i].object_position,
+                                            "/visual/object_base_frame_" + std::to_string(object_msgs->objects_positions_id[i].object_id));
                     }
             }
 
@@ -50,8 +50,8 @@ class tf_publisher{
                     tf_pub.sendTransform(tf::StampedTransform(transform, timestamp, "camera_depth_optical_frame", child_frame_id));
             }
 
-        int get_object_size(){
-                return _object_size;
+        int get_number_of_objects(){
+                return _number_of_objects;
             }
 
     private:
@@ -62,7 +62,7 @@ class tf_publisher{
         tf::StampedTransform stamped_transform;
         geometry_msgs::TransformStamped msg;
         std::string _camera_type;
-        int _object_size;
+        int _number_of_objects;
     };
 
 
@@ -74,13 +74,13 @@ int main(int argc, char **argv)
         ros::init(argc, argv, "test_octomap_node");
         ros::NodeHandle node;
 
-        ros::Publisher _objects_positions_pub = node.advertise<static_object_position_tracking::ObjectPosition>("/visual/obj_pos_vector", 1000);
+        ros::Publisher _objects_positions_pub = node.advertise<static_object_position_tracking::ObjectsPositionsMap>("/visual/obj_pos_vector", 1000);
         tf::StampedTransform transform;
         tf::TransformListener listener;
         geometry_msgs::TransformStamped msg;
         std::string parent_frame = "/base";
         std::string child_frame_id;
-        static_object_position_tracking::ObjectPosition obj_pos_msg_;
+        static_object_position_tracking::ObjectsPositionsMap obj_pos_msg_;
 
         tf_publisher my_tf_publisher;
         my_tf_publisher.init();
@@ -91,7 +91,8 @@ int main(int argc, char **argv)
                 ros::spinOnce();
 
                 geometry_msgs::PointStamped point;
-                for(int i = 0; i < my_tf_publisher.get_object_size(); i++){
+                static_object_position_tracking::ObjectPositionID current_object;
+                for(int i = 0; i < my_tf_publisher.get_number_of_objects(); i++){
                         try{
                             child_frame_id = "/visual/object_base_frame_" + std::to_string(i);
                             listener.lookupTransform(parent_frame, child_frame_id, ros::Time(0), transform);
@@ -103,7 +104,9 @@ int main(int argc, char **argv)
                             point.point.y = msg.transform.translation.y;
                             point.point.z = msg.transform.translation.z;
                             point.header.seq = i;
-                            obj_pos_msg_.object_position.push_back(point);
+                            current_object.object_id = i;
+                            current_object.object_position = point;
+                            obj_pos_msg_.objects_positions_id.push_back(current_object);
                             //                ROS_ERROR_STREAM("Object " << i << " : " <<
                             //                                                point.point.x << " " <<
                             //                                                point.point.y << " " <<
@@ -115,7 +118,7 @@ int main(int argc, char **argv)
                             }
                     }
                 _objects_positions_pub.publish(obj_pos_msg_);
-                obj_pos_msg_.object_position.clear();
+                obj_pos_msg_.objects_positions_id.clear();
                 my_rate.sleep();
             }
         ros::waitForShutdown();

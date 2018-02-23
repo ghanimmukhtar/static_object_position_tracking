@@ -1,0 +1,2 @@
+int32 object_id
+geometry_msgs/PointStamped object_position
